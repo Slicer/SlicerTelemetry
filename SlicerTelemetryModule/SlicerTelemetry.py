@@ -26,6 +26,13 @@ from slicer import vtkMRMLScalarVolumeNode
 
 
 def onUsageEventLogged(component, event):
+    # Check if the component is in the selected extensions
+    settings = qt.QSettings()
+    selectedExtensions = settings.value("selectedExtensions", [])
+    if component not in selectedExtensions:
+        print(f"Component {component} is not in the selected extensions. Event not logged.")
+        return
+    
     # Get the current date without hours and seconds
     event_day = datetime.now().strftime('%Y-%m-%d')
     event_info = {
@@ -124,9 +131,49 @@ and Steve Pieper, Isomics, Inc. and was partially funded by NIH grant 3P41RR0132
             self._haveQT = True
         except ModuleNotFoundError:
             self._haveQT = False
+    
+        slicer.app.extensionsManagerModel().extensionInstalled.connect(self.onExtensionInstalled)
+
 
     def onStartupCompleted(self):
+        qt.QTimer.singleShot(4000, self.showTelemetryPermissionPopup)
         qt.QTimer.singleShot(5000, self.showPopup)
+
+    def showTelemetryPermissionPopup(self):
+        settings = qt.QSettings()
+        if settings.value("TelemetryDefaultPermission", None) is None:
+            dialog = qt.QMessageBox()
+            dialog.setWindowTitle("Telemetry Permission")
+            dialog.setText("Allow new installed extensions to enable telemetry?\n"
+               "You can change this anytime in the telemetry extension")
+            dialog.setStandardButtons(qt.QMessageBox.Ok)
+            dialog.setDefaultButton(qt.QMessageBox.Ok)
+            checkbox = qt.QCheckBox("Allow")
+            dialog.setCheckBox(checkbox)
+
+            response = dialog.exec_()
+            allow_telemetry = checkbox.isChecked()
+
+            if response == qt.QMessageBox.Ok and allow_telemetry:
+                settings.setValue("TelemetryDefaultPermission", True)
+            else:
+                settings.setValue("TelemetryDefaultPermission", False)
+    
+    def onExtensionInstalled(self, extensionName):
+        settings = qt.QSettings()
+        telemetryDefaultPermission = settings.value("TelemetryDefaultPermission")
+        print(f"Telemetry default permission: {telemetryDefaultPermission}")
+        
+        selectedExtensions = settings.value("selectedExtensions", [])
+        if isinstance(selectedExtensions, tuple):
+            selectedExtensions = list(selectedExtensions)
+        
+        if telemetryDefaultPermission=="true":
+            if extensionName not in selectedExtensions:
+                selectedExtensions.append(extensionName)
+                settings.setValue("selectedExtensions", selectedExtensions)
+        
+
 
     def showPopup(self):
         if self.shouldShowPopup():
@@ -310,7 +357,45 @@ class SlicerTelemetryWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         # These connections ensure that we update parameter node when scene is closed
         self.addObserver(slicer.mrmlScene, slicer.mrmlScene.StartCloseEvent, self.onSceneStartClose)
         self.addObserver(slicer.mrmlScene, slicer.mrmlScene.EndCloseEvent, self.onSceneEndClose)
-       
+        
+        self.extensionSelectionGroupBox = qt.QGroupBox("Select Extensions for Telemetry")
+        self.extensionSelectionLayout = qt.QVBoxLayout()
+
+        # Get the list of installed extensions
+        self.extensions = slicer.app.extensionsManagerModel().installedExtensions
+        self.extensionCheckboxes = {}
+
+        #Get the selected extensions from QSettings
+        settings = qt.QSettings()
+        selectedExtensions = settings.value("selectedExtensions", [])
+        if isinstance(selectedExtensions, tuple):
+            selectedExtensions = list(selectedExtensions)
+
+        for extension in self.extensions:
+            checkbox = qt.QCheckBox(extension)
+            if extension in selectedExtensions:
+                checkbox.setChecked(True)
+            checkbox.stateChanged.connect(self.saveExtensionSelection)
+            self.extensionSelectionLayout.addWidget(checkbox)
+            self.extensionCheckboxes[extension] = checkbox
+        
+        self.extensionSelectionGroupBox.setLayout(self.extensionSelectionLayout)
+        self.layout.addWidget(self.extensionSelectionGroupBox)
+
+        self.comboBox = qt.QComboBox()
+        self.comboBox.addItems(["default allowed", "default denied"])
+
+        # Check if the setting exists
+        if settings.contains("TelemetryDefaultPermission"):
+            current_permission = settings.value("TelemetryDefaultPermission", False).lower() == 'true'
+        else:
+            current_permission = False  # Default to denied if the setting does not exist
+
+        self.comboBox.setCurrentIndex(0 if current_permission else 1)
+        self.comboBox.currentIndexChanged.connect(lambda index: settings.setValue("TelemetryDefaultPermission", index == 0))
+        self.layout.addWidget(self.comboBox)
+
+
 
         # Buttons
         self.ui.applyButton.connect("clicked(bool)", self.onApplyButton)
@@ -318,7 +403,10 @@ class SlicerTelemetryWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         # Make sure parameter node is initialized (needed for module reload)
         self.initializeParameterNode()
 
-       
+    def saveExtensionSelection(self):
+        settings = qt.QSettings()
+        selectedExtensions = [ext for ext, checkbox in self.extensionCheckboxes.items() if checkbox.isChecked()]
+        settings.setValue("selectedExtensions", selectedExtensions)
     
 
     def cleanup(self) -> None:
@@ -402,7 +490,7 @@ class SlicerTelemetryLogic(ScriptedLoadableModuleLogic):
     def logAnEvent(self):
         # Log this event
         if hasattr(slicer.app, 'logUsageEvent') and slicer.app.isUsageLoggingSupported:
-            slicer.app.logUsageEvent("TelemetryExtension", "logAnEvent")
+            slicer.app.logUsageEvent("SlicerTelemetry", "logAnEvent")
 
 
 #
