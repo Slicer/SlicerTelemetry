@@ -21,18 +21,46 @@ from slicer import vtkMRMLScalarVolumeNode
 
 
 #
-# SlicerTelemetry
+# Telemetry
 #
 
 
 def onUsageEventLogged(component, event):
-    # Check if the component is in the selected extensions
+    # Load settings
     settings = qt.QSettings()
-    selectedExtensions = settings.value("selectedExtensions", [])
-    if component not in selectedExtensions:
-        print(f"Component {component} is not in the selected extensions. Event not logged.")
-        return
+    enabledExtensions = settings.value("enabledExtensions", [])
+    disabledExtensions = settings.value("disabledExtensions", [])
+    defaultExtensions = settings.value("defaultExtensions", [])
+    telemetryDefaultPermission = settings.value("TelemetryDefaultPermission")
+    if isinstance(enabledExtensions, tuple):
+        enabledExtensions = list(enabledExtensions)
+    if isinstance(disabledExtensions, tuple):
+        disabledExtensions = list(disabledExtensions)
+    if isinstance(defaultExtensions, tuple):
+        defaultExtensions = list(defaultExtensions)
+
+    # Ensure the settings are lists
+    if enabledExtensions is None:
+        enabledExtensions = []
+    if disabledExtensions is None:
+        disabledExtensions = []
+    if defaultExtensions is None:
+        defaultExtensions = []
     
+    # Check if the component should be logged
+    if component in enabledExtensions:
+        should_log = True
+    elif component in disabledExtensions:
+        should_log = False
+    elif component in defaultExtensions:
+        should_log = telemetryDefaultPermission
+    else:
+        should_log = False
+
+    if not should_log:
+        print(f"Component {component} is not in the enabled or default extensions with permission. Event not logged.")
+        return
+
     # Get the current date without hours and seconds
     event_day = datetime.now().strftime('%Y-%m-%d')
     event_info = {
@@ -80,14 +108,14 @@ def onUsageEventLogged(component, event):
 if hasattr(slicer.app, 'usageEventLogged') and slicer.app.isUsageLoggingSupported:
     slicer.app.usageEventLogged.connect(onUsageEventLogged)
 
-class SlicerTelemetry(ScriptedLoadableModule):
+class Telemetry(ScriptedLoadableModule):
     """Uses ScriptedLoadableModule base class, available at:
     https://github.com/Slicer/Slicer/blob/main/Base/Python/slicer/ScriptedLoadableModule.py
     """
 
     def __init__(self, parent):
         ScriptedLoadableModule.__init__(self, parent)
-        self.parent.title = _("SlicerTelemetry")  # TODO: make this more human readable by adding spaces
+        self.parent.title = _("Telemetry")  # TODO: make this more human readable by adding spaces
         # TODO: set categories (folders where the module shows up in the module selector)
         self.parent.categories = [translate("qSlicerAbstractCoreModule", "Telemetry")]
         self.parent.dependencies = []  # TODO: add here list of module names that this module requires
@@ -95,14 +123,10 @@ class SlicerTelemetry(ScriptedLoadableModule):
         # TODO: update with short description of the module and a link to online module documentation
         # _() function marks text as translatable to other languages
         self.parent.helpText = _("""
-This is an example of scripted loadable module bundled in an extension.
-See more information in <a href="https://github.com/organization/projectname#MyFirstModule">module documentation</a>.
+This extension allows 3D Slicer extensions to gather information on what software features are used. This information helps demonstrating impact, which is essential for getting continuous funding for maintenance and improvements.
 """)
-        # TODO: replace with organization, grant and thanks
         self.parent.acknowledgementText = _("""
-This file was originally developed by Jean-Christophe Fillion-Robin, Kitware Inc., Andras Lasso, PerkLab,
-and Steve Pieper, Isomics, Inc. and was partially funded by NIH grant 3P41RR013218-12S1.
-""")
+Bernardo Dominguez developed this module for his professional supervised practices of engineering studies at UTN-FRRO under the supervision and advice of PhD. Andras Lasso at Perklab and guidance from Slicer core developers""")
         
         self.url = "http://127.0.0.1:8080/telemetry"
         self.headers = {"Content-Type": "application/json"}
@@ -164,14 +188,13 @@ and Steve Pieper, Isomics, Inc. and was partially funded by NIH grant 3P41RR0132
         telemetryDefaultPermission = settings.value("TelemetryDefaultPermission")
         print(f"Telemetry default permission: {telemetryDefaultPermission}")
         
-        selectedExtensions = settings.value("selectedExtensions", [])
-        if isinstance(selectedExtensions, tuple):
-            selectedExtensions = list(selectedExtensions)
+        defaultExtensions = settings.value("defaultExtensions", [])
+        if isinstance(defaultExtensions, tuple):
+            defaultExtensions = list(defaultExtensions)
         
-        if telemetryDefaultPermission=="true":
-            if extensionName not in selectedExtensions:
-                selectedExtensions.append(extensionName)
-                settings.setValue("selectedExtensions", selectedExtensions)
+        if extensionName not in defaultExtensions:
+            defaultExtensions.append(extensionName)
+            settings.setValue("defaultExtensions", defaultExtensions)
         
 
 
@@ -304,11 +327,11 @@ and Steve Pieper, Isomics, Inc. and was partially funded by NIH grant 3P41RR0132
 
 
 #
-# SlicerTelemetryParameterNode
+# TelemetryParameterNode
 #
 
 @parameterNodeWrapper
-class SlicerTelemetryParameterNode:
+class TelemetryParameterNode:
     """
     The parameters needed by module.
 
@@ -316,11 +339,11 @@ class SlicerTelemetryParameterNode:
 
 
 #
-# SlicerTelemetryWidget
+# TelemetryWidget
 #
 
 
-class SlicerTelemetryWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
+class TelemetryWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     """Uses ScriptedLoadableModuleWidget base class, available at:
     https://github.com/Slicer/Slicer/blob/main/Base/Python/slicer/ScriptedLoadableModule.py
     """
@@ -339,7 +362,7 @@ class SlicerTelemetryWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
         # Load widget from .ui file (created by Qt Designer).
         # Additional widgets can be instantiated manually and added to self.layout.
-        uiWidget = slicer.util.loadUI(self.resourcePath("UI/SlicerTelemetry.ui"))
+        uiWidget = slicer.util.loadUI(self.resourcePath("UI/Telemetry.ui"))
         self.layout.addWidget(uiWidget)
         self.ui = slicer.util.childWidgetVariables(uiWidget)
 
@@ -350,7 +373,7 @@ class SlicerTelemetryWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
         # Create logic class. Logic implements all computations that should be possible to run
         # in batch mode, without a graphical user interface.
-        self.logic = SlicerTelemetryLogic()
+        self.logic = TelemetryLogic()
 
         # Connections
 
@@ -361,24 +384,54 @@ class SlicerTelemetryWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.extensionSelectionGroupBox = qt.QGroupBox("Select Extensions for Telemetry")
         self.extensionSelectionLayout = qt.QVBoxLayout()
 
+        # Initialize extensionComboBoxes
+        self.extensionComboBoxes = {}
+
         # Get the list of installed extensions
         self.extensions = slicer.app.extensionsManagerModel().installedExtensions
-        self.extensionCheckboxes = {}
 
-        #Get the selected extensions from QSettings
+        # Get the selected extensions from QSettings
         settings = qt.QSettings()
-        selectedExtensions = settings.value("selectedExtensions", [])
-        if isinstance(selectedExtensions, tuple):
-            selectedExtensions = list(selectedExtensions)
+        enabledExtensions = settings.value("enabledExtensions", [])
+        disabledExtensions = settings.value("disabledExtensions", [])
+        defaultExtensions = settings.value("defaultExtensions", [])
+
+        # Ensure the settings are lists
+        if enabledExtensions is None:
+            enabledExtensions = []
+        if disabledExtensions is None:
+            disabledExtensions = []
+        if defaultExtensions is None:
+            defaultExtensions = []
+
+        if isinstance(enabledExtensions, tuple):
+            enabledExtensions = list(enabledExtensions)
+        if isinstance(disabledExtensions, tuple):
+            disabledExtensions = list(disabledExtensions)
+        if isinstance(defaultExtensions, tuple):
+            defaultExtensions = list(defaultExtensions)
 
         for extension in self.extensions:
-            checkbox = qt.QCheckBox(extension)
-            if extension in selectedExtensions:
-                checkbox.setChecked(True)
-            checkbox.stateChanged.connect(self.saveExtensionSelection)
-            self.extensionSelectionLayout.addWidget(checkbox)
-            self.extensionCheckboxes[extension] = checkbox
-        
+            layout = qt.QHBoxLayout()
+            label = qt.QLabel(extension)
+            comboBox = qt.QComboBox()
+            comboBox.addItems(["default", "enable", "disable"])
+
+            # Set the initial state based on saved settings
+            if extension in enabledExtensions:
+                comboBox.setCurrentIndex(1)
+            elif extension in disabledExtensions:
+                comboBox.setCurrentIndex(2)
+            else:
+                comboBox.setCurrentIndex(0)
+                self.saveExtensionState(extension, 0)
+
+            comboBox.currentIndexChanged.connect(lambda index, ext=extension: self.saveExtensionState(ext, index))
+            layout.addWidget(label)
+            layout.addWidget(comboBox)
+            self.extensionSelectionLayout.addLayout(layout)
+            self.extensionComboBoxes[extension] = comboBox
+
         self.extensionSelectionGroupBox.setLayout(self.extensionSelectionLayout)
         self.layout.addWidget(self.extensionSelectionGroupBox)
 
@@ -387,7 +440,11 @@ class SlicerTelemetryWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
         # Check if the setting exists
         if settings.contains("TelemetryDefaultPermission"):
-            current_permission = settings.value("TelemetryDefaultPermission", False).lower() == 'true'
+            value = settings.value("TelemetryDefaultPermission", False)
+            if isinstance(value, str):
+                current_permission = value.lower() == 'true'
+            else:
+                current_permission = bool(value)
         else:
             current_permission = False  # Default to denied if the setting does not exist
 
@@ -395,18 +452,58 @@ class SlicerTelemetryWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.comboBox.currentIndexChanged.connect(lambda index: settings.setValue("TelemetryDefaultPermission", index == 0))
         self.layout.addWidget(self.comboBox)
 
-
-
         # Buttons
         self.ui.applyButton.connect("clicked(bool)", self.onApplyButton)
 
         # Make sure parameter node is initialized (needed for module reload)
         self.initializeParameterNode()
 
-    def saveExtensionSelection(self):
+    def saveExtensionState(self, extension, index):
         settings = qt.QSettings()
-        selectedExtensions = [ext for ext, checkbox in self.extensionCheckboxes.items() if checkbox.isChecked()]
-        settings.setValue("selectedExtensions", selectedExtensions)
+        enabledExtensions = settings.value("enabledExtensions", [])
+        disabledExtensions = settings.value("disabledExtensions", [])
+        defaultExtensions = settings.value("defaultExtensions", [])
+
+        # Ensure the settings are lists
+        if enabledExtensions is None:
+            enabledExtensions = []
+        if disabledExtensions is None:
+            disabledExtensions = []
+        if defaultExtensions is None:
+            defaultExtensions = []
+
+        if isinstance(enabledExtensions, tuple):
+            enabledExtensions = list(enabledExtensions)
+        if isinstance(disabledExtensions, tuple):
+            disabledExtensions = list(disabledExtensions)
+        if isinstance(defaultExtensions, tuple):
+            defaultExtensions = list(defaultExtensions)
+
+        if index == 1:
+            if extension not in enabledExtensions:
+                enabledExtensions.append(extension)
+            if extension in disabledExtensions:
+                disabledExtensions.remove(extension)
+            if extension in defaultExtensions:
+                defaultExtensions.remove(extension)
+        elif index == 2:
+            if extension not in disabledExtensions:
+                disabledExtensions.append(extension)
+            if extension in enabledExtensions:
+                enabledExtensions.remove(extension)
+            if extension in defaultExtensions:
+                defaultExtensions.remove(extension)
+        else:
+            if extension not in defaultExtensions:
+                defaultExtensions.append(extension)
+            if extension in enabledExtensions:
+                enabledExtensions.remove(extension)
+            if extension in disabledExtensions:
+                disabledExtensions.remove(extension)
+
+        settings.setValue("enabledExtensions", enabledExtensions)
+        settings.setValue("disabledExtensions", disabledExtensions)
+        settings.setValue("defaultExtensions", defaultExtensions)
     
 
     def cleanup(self) -> None:
@@ -445,7 +542,7 @@ class SlicerTelemetryWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.setParameterNode(self.logic.getParameterNode())
 
 
-    def setParameterNode(self, inputParameterNode: Optional[SlicerTelemetryParameterNode]) -> None:
+    def setParameterNode(self, inputParameterNode: Optional[TelemetryParameterNode]) -> None:
         """
         Set and observe parameter node.
         Observation is needed because when the parameter node is changed then the GUI must be updated immediately.
@@ -463,11 +560,11 @@ class SlicerTelemetryWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
                 
 #
-# SlicerTelemetryLogic
+# TelemetryLogic
 #
 
 
-class SlicerTelemetryLogic(ScriptedLoadableModuleLogic):
+class TelemetryLogic(ScriptedLoadableModuleLogic):
     """This class should implement all the actual
     computation done by your module.  The interface
     should be such that other python code can import
@@ -484,21 +581,21 @@ class SlicerTelemetryLogic(ScriptedLoadableModuleLogic):
 
     
     def getParameterNode(self):
-        return SlicerTelemetryParameterNode(super().getParameterNode())
+        return TelemetryParameterNode(super().getParameterNode())
 
 
     def logAnEvent(self):
         # Log this event
         if hasattr(slicer.app, 'logUsageEvent') and slicer.app.isUsageLoggingSupported:
-            slicer.app.logUsageEvent("SlicerTelemetry", "logAnEvent")
+            slicer.app.logUsageEvent("Telemetry", "logAnEvent")
 
 
 #
-# SlicerTelemetryTest
+# TelemetryTest
 #
 
 
-class SlicerTelemetryTest(ScriptedLoadableModuleTest):
+class TelemetryTest(ScriptedLoadableModuleTest):
     """
     This is the test case for your scripted module.
     Uses ScriptedLoadableModuleTest base class, available at:
@@ -512,9 +609,9 @@ class SlicerTelemetryTest(ScriptedLoadableModuleTest):
     def runTest(self):
         """Run as few or as many tests as needed here."""
         self.setUp()
-        self.test_SlicerTelemetry1()
+        self.test_Telemetry1()
 
-    def test_SlicerTelemetry1(self):
+    def test_Telemetry1(self):
         """Ideally you should have several levels of tests.  At the lowest level
         tests should exercise the functionality of the logic with different inputs
         (both valid and invalid).  At higher levels your tests should emulate the
