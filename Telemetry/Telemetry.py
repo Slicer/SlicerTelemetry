@@ -8,6 +8,7 @@ import vtk
 import qt
 import slicer
 import csv
+from slicer import qSlicerWebWidget 
 from slicer.i18n import tr as _
 from slicer.i18n import translate
 from slicer.ScriptedLoadableModule import *
@@ -131,7 +132,7 @@ Bernardo Dominguez developed this module for his professional supervised practic
         self.url = "http://127.0.0.1:8080/telemetry"
         self.headers = {"Content-Type": "application/json"}
         self.csv_file_path = 'telemetry_events.csv'
-
+        self.webWidget = None
         self.loggedEvents = []
         self.urlsByReply = {}
         
@@ -209,6 +210,9 @@ Bernardo Dominguez developed this module for his professional supervised practic
             checkbox = qt.QCheckBox("Do not ask again")
             dialog.setCheckBox(checkbox)
 
+            statsButton = dialog.addButton("Show Stats Dashboard", qt.QMessageBox.ActionRole)
+            statsButton.clicked.connect(self.showStatsDashboard)
+
             response = dialog.exec_()
             do_not_ask_again = checkbox.isChecked()
 
@@ -222,6 +226,154 @@ Bernardo Dominguez developed this module for his professional supervised practic
                 print("User rejected the telemetry upload.")
             elif response == qt.QMessageBox.Cancel:
                 print("User chose to be asked later.")
+
+
+    def showStatsDashboard(self):
+        if self.webWidget is None:
+            self.webWidget = qSlicerWebWidget()
+
+        events_json = json.dumps(self.loggedEvents)
+        js_title_formats = {
+            'time': r".title(d => `${d3.timeFormat('%Y-%m-%d')(d.key)}: ${d.value} events`)",
+            'module': r".title(d => `${d.key}: ${d.value} events`)",
+            'event': r".title(d => `${d.key}: ${d.value} occurrences`)",
+            'user': r".title(d => `User ${d.key}: ${d.value} events`)"
+        }
+        
+        htmlContent = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Slicer Usage Statistics</title>
+            <style>
+                body {{
+                    background-color: white;
+                    margin: 0;
+                    padding: 0;
+                }}
+                .chart-title {{
+                    font-weight: bold;
+                    text-align: center;
+                    margin: 10px 0;
+                }}
+                .dc-chart {{
+                    margin-bottom: 30px;
+                }}
+                .chart-container {{
+                    padding: 20px;
+                }}
+            </style>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dc/4.2.7/style/dc.min.css">
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/crossfilter2/1.5.4/crossfilter.min.js"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/dc/4.2.7/dc.min.js"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-scale-chromatic/1.5.0/d3-scale-chromatic.min.js"></script>
+        </head>
+        <body>
+        
+            <div class="chart-container">
+                <div class="chart-title">Event Timeline</div>
+                <div id="time-chart"></div>
+                
+                <div class="chart-title">Module Usage</div>
+                <div id="module-chart"></div>
+                
+                <div style="display: flex; justify-content: space-between;">
+                    <div style="width: 48%;">
+                        <div class="chart-title">Event Types</div>
+                        <div id="event-chart"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <script>
+                const loggedEvents = {events_json};
+                
+                function initializeStatsDashboard(loggedEvents) {{
+                    const parseDate = d3.timeParse("%Y-%m-%d");
+                    let expandedData = [];
+                    
+                    loggedEvents.forEach(d => {{
+                        d.date = parseDate(d.day);
+                        const times = parseInt(d.times, 10) || 1;
+                        for (let i = 0; i < times; i++) {{
+                            expandedData.push({{ ...d }});
+                        }}
+                    }});
+                    
+                    const cf = crossfilter(expandedData);
+                    const dateDim = cf.dimension(d => d.date);
+                    const moduleDim = cf.dimension(d => d.component);
+                    const eventDim = cf.dimension(d => d.event);
+                    const dateGroup = dateDim.group(d3.timeDay);
+                    const moduleGroup = moduleDim.group().reduceCount();
+                    const eventGroup = eventDim.group().reduceCount();
+                    
+                    // Update the color scheme
+                    dc.config.defaultColors(d3.schemeCategory10);
+                    
+                    const timeChart = dc.barChart("#time-chart");
+                    const moduleChart = dc.barChart("#module-chart");
+                    const eventChart = dc.rowChart("#event-chart");
+                    
+                    timeChart
+                        .width(900)
+                        .height(200)
+                        .margins({{top: 10, right: 10, bottom: 20, left: 40}})
+                        .dimension(dateDim)
+                        .group(dateGroup)
+                        .x(d3.scaleTime().domain(d3.extent(expandedData, d => d.date)))
+                        .round(d3.timeDay.round)
+                        .xUnits(d3.timeDays)
+                        .elasticY(true)
+                        .renderHorizontalGridLines(true)
+                        .brushOn(true)
+                        {js_title_formats['time']};
+                    
+                    moduleChart
+                        .width(900)
+                        .height(300)
+                        .margins({{top: 20, right: 20, bottom: 100, left: 40}})
+                        .dimension(moduleDim)
+                        .group(moduleGroup)
+                        .x(d3.scaleBand())
+                        .xUnits(dc.units.ordinal)
+                        .elasticY(true)
+                        .ordering(d => -d.value)
+                        .renderHorizontalGridLines(true)
+                        {js_title_formats['module']}
+                        .on('renderlet', function(chart) {{
+                            chart.selectAll('g.x text')
+                                .attr('transform', 'translate(-10,10) rotate(270)')
+                                .style('text-anchor', 'end');
+                        }});
+                    
+                    eventChart
+                        .width(400)
+                        .height(300)
+                        .margins({{top: 20, left: 10, right: 10, bottom: 20}})
+                        .dimension(eventDim)
+                        .group(eventGroup)
+                        .elasticX(true)
+                        .ordering(d => -d.value)
+                        {js_title_formats['event']}
+                        .on('renderlet', function(chart) {{
+                            chart.selectAll('g.row text')
+                                .style('fill', 'black');
+                        }});
+                    
+                    dc.renderAll();
+                }}
+                
+                initializeStatsDashboard(loggedEvents);
+            </script>
+        </body>
+        </html>
+        """
+
+        self.webWidget.setHtml(htmlContent)
+        self.webWidget.show()
+        self.webWidget.setMinimumWidth(960)
 
     def shouldShowPopup(self):
         settings = qt.QSettings()
