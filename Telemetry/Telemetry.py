@@ -236,8 +236,7 @@ Bernardo Dominguez developed this module for his professional supervised practic
         js_title_formats = {
             'time': r".title(d => `${d3.timeFormat('%Y-%m-%d')(d.key)}: ${d.value} events`)",
             'module': r".title(d => `${d.key}: ${d.value} events`)",
-            'event': r".title(d => `${d.key}: ${d.value} occurrences`)",
-            'user': r".title(d => `User ${d.key}: ${d.value} events`)"
+            'event': r".title(d => `${d.key}: ${d.value} occurrences`)"
         }
         
         htmlContent = f"""
