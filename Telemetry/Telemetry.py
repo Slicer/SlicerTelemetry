@@ -66,7 +66,6 @@ Bernardo Dominguez developed this module for his professional supervised practic
         slicer.app.connect("startupCompleted()", self.onStartupCompleted)
         
         try:
-            import qt
             self.networkAccessManager = qt.QNetworkAccessManager()
             self.networkAccessManager.finished.connect(self.handleQtReply)
             self.http2Allowed = True
@@ -113,31 +112,40 @@ Bernardo Dominguez developed this module for his professional supervised practic
 
     def showPopup(self):
         if self.shouldShowPopup():
-            dialog = qt.QMessageBox()
-            dialog.setWindowTitle("Telemetry")
-            dialog.setText("Would you like to send telemetry data to the server? Click detailed text to see the data")
-            dialog.setDetailedText(json.dumps(self.loggedEvents, indent=4))
-            dialog.setStandardButtons(qt.QMessageBox.Yes | qt.QMessageBox.No | qt.QMessageBox.Cancel)
-            dialog.setDefaultButton(qt.QMessageBox.Yes)
+            self.telemetryDialog = qt.QMessageBox()
+            self.telemetryDialog.setWindowTitle("Telemetry")
+            self.telemetryDialog.setText("Would you like to send telemetry data to the server? Click detailed text to see the data")
+            self.telemetryDialog.setDetailedText(json.dumps(self.loggedEvents, indent=4))
+            self.telemetryDialog.setStandardButtons(qt.QMessageBox.Yes | qt.QMessageBox.No | qt.QMessageBox.Cancel)
+            self.telemetryDialog.setDefaultButton(qt.QMessageBox.Yes)
             checkbox = qt.QCheckBox("Do not ask again")
-            dialog.setCheckBox(checkbox)
+            self.telemetryDialog.setCheckBox(checkbox)
 
-            statsButton = dialog.addButton("Show Stats Dashboard", qt.QMessageBox.ActionRole)
+            statsButton = qt.QPushButton("Show Stats Dashboard")
+            self.telemetryDialog.layout().addWidget(statsButton, self.telemetryDialog.layout().rowCount(), 0, 1, self.telemetryDialog.layout().columnCount())
             statsButton.clicked.connect(self.showStatsDashboard)
 
-            response = dialog.exec_()
-            do_not_ask_again = checkbox.isChecked()
+            self.telemetryDialog.setWindowModality(qt.Qt.NonModal)
 
-            if do_not_ask_again:
-                self.saveUserResponse(response)
+            # Connect standard buttons to custom handlers
+            self.telemetryDialog.button(qt.QMessageBox.Yes).clicked.connect(lambda: self.handleTelemetryDialogResponse(qt.QMessageBox.Yes, checkbox))
+            self.telemetryDialog.button(qt.QMessageBox.No).clicked.connect(lambda: self.handleTelemetryDialogResponse(qt.QMessageBox.No, checkbox))
+            self.telemetryDialog.button(qt.QMessageBox.Cancel).clicked.connect(lambda: self.handleTelemetryDialogResponse(qt.QMessageBox.Cancel, checkbox))
 
-            if response == qt.QMessageBox.Yes:
-                print("User accepted the telemetry upload.")
-                self.weeklyUsageUpload()
-            elif response == qt.QMessageBox.No:
-                print("User rejected the telemetry upload.")
-            elif response == qt.QMessageBox.Cancel:
-                print("User chose to be asked later.")
+            self.telemetryDialog.show()
+
+    def handleTelemetryDialogResponse(self, response, checkbox):
+        do_not_ask_again = checkbox.isChecked()
+        if do_not_ask_again:
+            self.saveUserResponse(response)
+        if response == qt.QMessageBox.Yes:
+            print("User accepted the telemetry upload.")
+            self.weeklyUsageUpload()
+        elif response == qt.QMessageBox.No:
+            print("User rejected the telemetry upload.")
+        elif response == qt.QMessageBox.Cancel:
+            print("User chose to be asked later.")
+        self.telemetryDialog.close()
 
 
     def showStatsDashboard(self):
@@ -172,6 +180,16 @@ Bernardo Dominguez developed this module for his professional supervised practic
                 }}
                 .chart-container {{
                     padding: 20px;
+                    display: flex;
+                    flex-direction: row;
+                    justify-content: space-between;
+                    gap: 20px;
+                }}
+                .chart-col {{
+                    flex: 1 1 0;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
                 }}
             </style>
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dc/4.2.7/style/dc.min.css">
@@ -183,17 +201,17 @@ Bernardo Dominguez developed this module for his professional supervised practic
         <body>
         
             <div class="chart-container">
-                <div class="chart-title">Event Timeline</div>
-                <div id="time-chart"></div>
-                
-                <div class="chart-title">Module Usage</div>
-                <div id="module-chart"></div>
-                
-                <div style="display: flex; justify-content: space-between;">
-                    <div style="width: 48%;">
-                        <div class="chart-title">Event Types</div>
-                        <div id="event-chart"></div>
-                    </div>
+                <div class="chart-col">
+                    <div class="chart-title">Event Timeline</div>
+                    <div id="time-chart"></div>
+                </div>
+                <div class="chart-col">
+                    <div class="chart-title">Module Usage</div>
+                    <div id="module-chart"></div>
+                </div>
+                <div class="chart-col">
+                    <div class="chart-title">Event Types</div>
+                    <div id="event-chart"></div>
                 </div>
             </div>
             
@@ -228,9 +246,9 @@ Bernardo Dominguez developed this module for his professional supervised practic
                     const eventChart = dc.rowChart("#event-chart");
                     
                     timeChart
-                        .width(900)
-                        .height(200)
-                        .margins({{top: 10, right: 10, bottom: 20, left: 40}})
+                        .width(350)
+                        .height(250)
+                        .margins({{top: 20, right: 20, bottom: 40, left: 40}})
                         .dimension(dateDim)
                         .group(dateGroup)
                         .x(d3.scaleTime().domain(d3.extent(expandedData, d => d.date)))
@@ -242,9 +260,9 @@ Bernardo Dominguez developed this module for his professional supervised practic
                         {js_title_formats['time']};
                     
                     moduleChart
-                        .width(900)
-                        .height(300)
-                        .margins({{top: 20, right: 20, bottom: 100, left: 40}})
+                        .width(350)
+                        .height(250)
+                        .margins({{top: 20, right: 20, bottom: 80, left: 40}})
                         .dimension(moduleDim)
                         .group(moduleGroup)
                         .x(d3.scaleBand())
@@ -260,8 +278,8 @@ Bernardo Dominguez developed this module for his professional supervised practic
                         }});
                     
                     eventChart
-                        .width(400)
-                        .height(300)
+                        .width(350)
+                        .height(250)
                         .margins({{top: 20, left: 10, right: 10, bottom: 20}})
                         .dimension(eventDim)
                         .group(eventGroup)
@@ -284,8 +302,11 @@ Bernardo Dominguez developed this module for his professional supervised practic
 
         self.webWidget.setHtml(htmlContent)
         self.webWidget.show()
-        self.webWidget.setMinimumWidth(960)
+        self.webWidget.setMinimumWidth(1100)
+        self.webWidget.setMinimumHeight(400)
+        self.webWidget.setWindowTitle("Slicer Usage Statistics")
 
+        
     def shouldShowPopup(self):
         settings = qt.QSettings()
         lastSent = settings.value("lastSent")
@@ -342,7 +363,6 @@ Bernardo Dominguez developed this module for his professional supervised practic
                 try:
                     data_to_send = self.loggedEvents 
                     if self._haveQT:
-                        import qt
                         request = qt.QNetworkRequest(qt.QUrl(self.url))
                         request.setHeader(qt.QNetworkRequest.ContentTypeHeader, "application/json")
                         json_data = json.dumps(data_to_send)
