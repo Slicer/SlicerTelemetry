@@ -4,7 +4,7 @@ project(Telemetry)
 
 #-----------------------------------------------------------------------------
 # Extension meta-information
-set(EXTENSION_HOMEPAGE "https://github.com/Slicer/SlicerTelemetry")
+set(EXTENSION_HOMEPAGE "https://github.com/BerDom-Ing/SlicerTelemetry/tree/main")
 set(EXTENSION_CATEGORY "Informatics")
 set(EXTENSION_CONTRIBUTORS "Dominguez Bernardo")
 set(EXTENSION_DESCRIPTION "This extension allows 3D Slicer extensions to gather information on what software features are used.")
