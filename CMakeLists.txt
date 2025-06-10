@@ -5,11 +5,11 @@ project(Telemetry)
 #-----------------------------------------------------------------------------
 # Extension meta-information
 set(EXTENSION_HOMEPAGE "https://github.com/Slicer/SlicerTelemetry")
-set(EXTENSION_CATEGORY "Developer Tools")
+set(EXTENSION_CATEGORY "Informatics")
 set(EXTENSION_CONTRIBUTORS "Dominguez Bernardo")
 set(EXTENSION_DESCRIPTION "This extension allows 3D Slicer extensions to gather information on what software features are used.")
 set(EXTENSION_ICONURL "https://raw.githubusercontent.com/BerDom-Ing/SlicerTelemetry/refs/heads/main/Telemetry.png")
-set(EXTENSION_SCREENSHOTURLS "https://raw.githubusercontent.com/Slicer/SlicerTelemetry/main/Telemetry/Resources/Pictures/screenshotExtensionPermissions.png https://raw.githubusercontent.com/Slicer/SlicerTelemetry/main/Telemetry/Resources/Pictures/screenshotDialog.png")
+set(EXTENSION_SCREENSHOTURLS "https://raw.githubusercontent.com/BerDom-Ing/SlicerTelemetry/refs/heads/main/Telemetry/Resources/Pictures/screenshotDialog.png https://raw.githubusercontent.com/BerDom-Ing/SlicerTelemetry/refs/heads/main/Telemetry/Resources/Pictures/screenshotExtensionPermissions.png")
 set(EXTENSION_DEPENDS "NA") # Specified as a list or "NA" if no dependencies
 
 #-----------------------------------------------------------------------------
