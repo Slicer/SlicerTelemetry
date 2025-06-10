@@ -14,6 +14,7 @@ Individual users are not attempted to be identified in any way: all data is aggr
 3D Slicer core (content of the installation package downloaded from download.slicer.org) does not contain any code for collecting or sending software usage statistics.
 If a user does not install the Telemetry extension then data cannot be collected.
 If an extension wants to collect such data then it has to ask the user to install the Telemetry extension and enable usage data collection.
+![screenshotExtensionPermissions](https://raw.githubusercontent.com/BerDom-Ing/SlicerTelemetry/refs/heads/main/Telemetry/Resources/Pictures/screenshotExtensionPermissions.png)
 
 ## How developers should use it
 
