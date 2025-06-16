@@ -53,7 +53,7 @@ This extension allows 3D Slicer extensions to gather information on what softwar
         self.parent.acknowledgementText = _("""
 Bernardo Dominguez developed this module for his professional supervised practices of engineering studies at UTN-FRRO under the supervision and advice of PhD. Andras Lasso at Perklab and guidance from Slicer core developers""")
         
-        self.url = "http://127.0.0.1:8080/telemetry"
+        self.url = "https://ber-dom.sao.dom.my.id/telemetry"
         self.headers = {"Content-Type": "application/json"}
         self.csv_file_path = 'telemetry_events.csv'
         self.webWidget = None
