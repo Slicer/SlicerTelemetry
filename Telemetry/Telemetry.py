@@ -450,9 +450,16 @@ class TelemetryWidget(ScriptedLoadableModuleWidget):
         # Get the selected extensions. Since `QSettings.value()` returns list as tuple,
         # convert back to list.
         settings = qt.QSettings()
-        enabledExtensions = list(settings.value("enabledExtensions", []))
-        disabledExtensions = list(settings.value("disabledExtensions", []))
-        defaultExtensions = list(settings.value("defaultExtensions", []))
+        enabledExtensions = settings.value("enabledExtensions")
+        disabledExtensions = settings.value("disabledExtensions")
+        defaultExtensions = settings.value("defaultExtensions")
+
+        if isinstance(enabledExtensions, tuple):
+            enabledExtensions = list(enabledExtensions)
+        if isinstance(disabledExtensions, tuple):
+            disabledExtensions = list(disabledExtensions)
+        if isinstance(defaultExtensions, tuple):
+            defaultExtensions = list(defaultExtensions)
 
         # Ensure the settings are lists
         if enabledExtensions is None:
@@ -508,9 +515,16 @@ class TelemetryWidget(ScriptedLoadableModuleWidget):
 
     def saveExtensionState(self, extension, index):
         settings = qt.QSettings()
-        enabledExtensions = list(settings.value("enabledExtensions", []))
-        disabledExtensions = list(settings.value("disabledExtensions", []))
-        defaultExtensions = list(settings.value("defaultExtensions", []))
+        enabledExtensions = settings.value("enabledExtensions")
+        disabledExtensions = settings.value("disabledExtensions")
+        defaultExtensions = settings.value("defaultExtensions")
+
+        if isinstance(enabledExtensions, tuple):
+            enabledExtensions = list(enabledExtensions)
+        if isinstance(disabledExtensions, tuple):
+            disabledExtensions = list(disabledExtensions)
+        if isinstance(defaultExtensions, tuple):
+            defaultExtensions = list(defaultExtensions)
 
         # Ensure the settings are lists
         if enabledExtensions is None:
@@ -612,10 +626,17 @@ class TelemetryLogic(ScriptedLoadableModuleLogic):
     def shouldLogUsageEvent(component):
         # Load settings
         settings = qt.QSettings()
-        enabledExtensions = list(settings.value("enabledExtensions", []))
-        disabledExtensions = list(settings.value("disabledExtensions", []))
-        defaultExtensions = list(settings.value("defaultExtensions", []))
+        enabledExtensions = settings.value("enabledExtensions")
+        disabledExtensions = settings.value("disabledExtensions")
+        defaultExtensions = settings.value("defaultExtensions")
         telemetryDefaultPermission = settings.value("TelemetryDefaultPermission")
+
+        if isinstance(enabledExtensions, tuple):
+            enabledExtensions = list(enabledExtensions)
+        if isinstance(disabledExtensions, tuple):
+            disabledExtensions = list(disabledExtensions)
+        if isinstance(defaultExtensions, tuple):
+            defaultExtensions = list(defaultExtensions)
 
         # Ensure the settings are lists
         if enabledExtensions is None:
