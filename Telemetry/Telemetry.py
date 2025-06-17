@@ -454,6 +454,14 @@ class TelemetryWidget(ScriptedLoadableModuleWidget):
         disabledExtensions = list(settings.value("disabledExtensions", []))
         defaultExtensions = list(settings.value("defaultExtensions", []))
 
+        # Ensure the settings are lists
+        if enabledExtensions is None:
+            enabledExtensions = []
+        if disabledExtensions is None:
+            disabledExtensions = []
+        if defaultExtensions is None:
+            defaultExtensions = []
+
         for extension in self.extensions:
             layout = qt.QHBoxLayout()
             label = qt.QLabel(extension)
@@ -503,6 +511,14 @@ class TelemetryWidget(ScriptedLoadableModuleWidget):
         enabledExtensions = list(settings.value("enabledExtensions", []))
         disabledExtensions = list(settings.value("disabledExtensions", []))
         defaultExtensions = list(settings.value("defaultExtensions", []))
+
+        # Ensure the settings are lists
+        if enabledExtensions is None:
+            enabledExtensions = []
+        if disabledExtensions is None:
+            disabledExtensions = []
+        if defaultExtensions is None:
+            defaultExtensions = []
 
         if index == 1:
             if extension not in enabledExtensions:
@@ -600,6 +616,14 @@ class TelemetryLogic(ScriptedLoadableModuleLogic):
         disabledExtensions = list(settings.value("disabledExtensions", []))
         defaultExtensions = list(settings.value("defaultExtensions", []))
         telemetryDefaultPermission = settings.value("TelemetryDefaultPermission")
+
+        # Ensure the settings are lists
+        if enabledExtensions is None:
+            enabledExtensions = []
+        if disabledExtensions is None:
+            disabledExtensions = []
+        if defaultExtensions is None:
+            defaultExtensions = []
 
         should_log = False
 
