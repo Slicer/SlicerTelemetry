@@ -5,7 +5,7 @@ import json
 import requests
 import qt
 import slicer
-from slicer import qSlicerWebWidget 
+from slicer import qSlicerWebWidget
 from slicer.i18n import tr as _
 from slicer.i18n import translate
 from slicer.ScriptedLoadableModule import (
@@ -40,19 +40,18 @@ class Telemetry(ScriptedLoadableModule):
 
     def __init__(self, parent):
         ScriptedLoadableModule.__init__(self, parent)
-        self.parent.title = _("Telemetry")  # TODO: make this more human readable by adding spaces
-        # TODO: set categories (folders where the module shows up in the module selector)
-        self.parent.categories = [translate("qSlicerAbstractCoreModule", "Telemetry")]
-        self.parent.dependencies = []  # TODO: add here list of module names that this module requires
-        self.parent.contributors = ["Dominguez Bernardo"]  # TODO: replace with "Firstname Lastname (Organization)"
-        # TODO: update with short description of the module and a link to online module documentation
+        self.parent.title = _("Telemetry")
+        self.parent.categories = [translate("qSlicerAbstractCoreModule", "Utilities")]
+        self.parent.dependencies = []
+        self.parent.contributors = ["Dominguez Bernardo", "Andras Lasso (PerkLab, Queen's University)"]
         # _() function marks text as translatable to other languages
         self.parent.helpText = _("""
 This extension allows 3D Slicer extensions to gather information on what software features are used. This information helps demonstrating impact, which is essential for getting continuous funding for maintenance and improvements.
+See more information at <a href='https://github.com/Slicer/SlicerTelemetry'>Telemetry extension website</a>.
 """)
         self.parent.acknowledgementText = _("""
 Bernardo Dominguez developed this module for his professional supervised practices of engineering studies at UTN-FRRO under the supervision and advice of PhD. Andras Lasso at Perklab and guidance from Slicer core developers""")
-        
+
         self.url = "https://ber-dom.sao.dom.my.id/telemetry"
         self.headers = {"Content-Type": "application/json"}
         self.csv_file_path = 'telemetry_events.csv'
@@ -64,7 +63,7 @@ Bernardo Dominguez developed this module for his professional supervised practic
         self.loggedEvents = TelemetryLogic.readLoggedEventsFromFile(self.csv_file_path)
 
         slicer.app.connect("startupCompleted()", self.onStartupCompleted)
-        
+
         try:
             self.networkAccessManager = qt.QNetworkAccessManager()
             self.networkAccessManager.finished.connect(self.handleQtReply)
@@ -72,7 +71,7 @@ Bernardo Dominguez developed this module for his professional supervised practic
             self._haveQT = True
         except ModuleNotFoundError:
             self._haveQT = False
-    
+
         slicer.app.extensionsManagerModel().extensionInstalled.connect(self.onExtensionInstalled)
 
     def onStartupCompleted(self):
@@ -98,14 +97,14 @@ Bernardo Dominguez developed this module for his professional supervised practic
                 settings.setValue("TelemetryDefaultPermission", True)
             else:
                 settings.setValue("TelemetryDefaultPermission", False)
-    
+
     def onExtensionInstalled(self, extensionName):
         settings = qt.QSettings()
         telemetryDefaultPermission = settings.value("TelemetryDefaultPermission")
         print(f"Telemetry default permission: {telemetryDefaultPermission}")
-        
+
         defaultExtensions = list(settings.value("defaultExtensions", []))
-        
+
         if extensionName not in defaultExtensions:
             defaultExtensions.append(extensionName)
             settings.setValue("defaultExtensions", defaultExtensions)
@@ -158,7 +157,7 @@ Bernardo Dominguez developed this module for his professional supervised practic
             'module': r".title(d => `${d.key}: ${d.value} events`)",
             'event': r".title(d => `${d.key}: ${d.value} occurrences`)"
         }
-        
+
         htmlContent = f"""
         <!DOCTYPE html>
         <html>
@@ -199,7 +198,7 @@ Bernardo Dominguez developed this module for his professional supervised practic
             <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-scale-chromatic/1.5.0/d3-scale-chromatic.min.js"></script>
         </head>
         <body>
-        
+
             <div class="chart-container">
                 <div class="chart-col">
                     <div class="chart-title">Event Timeline</div>
@@ -214,14 +213,14 @@ Bernardo Dominguez developed this module for his professional supervised practic
                     <div id="event-chart"></div>
                 </div>
             </div>
-            
+
             <script>
                 const loggedEvents = {events_json};
-                
+
                 function initializeStatsDashboard(loggedEvents) {{
                     const parseDate = d3.timeParse("%Y-%m-%d");
                     let expandedData = [];
-                    
+
                     loggedEvents.forEach(d => {{
                         d.date = parseDate(d.day);
                         const times = parseInt(d.times, 10) || 1;
@@ -229,7 +228,7 @@ Bernardo Dominguez developed this module for his professional supervised practic
                             expandedData.push({{ ...d }});
                         }}
                     }});
-                    
+
                     const cf = crossfilter(expandedData);
                     const dateDim = cf.dimension(d => d.date);
                     const moduleDim = cf.dimension(d => d.component);
@@ -237,14 +236,14 @@ Bernardo Dominguez developed this module for his professional supervised practic
                     const dateGroup = dateDim.group(d3.timeDay);
                     const moduleGroup = moduleDim.group().reduceCount();
                     const eventGroup = eventDim.group().reduceCount();
-                    
+
                     // Update the color scheme
                     dc.config.defaultColors(d3.schemeCategory10);
-                    
+
                     const timeChart = dc.barChart("#time-chart");
                     const moduleChart = dc.barChart("#module-chart");
                     const eventChart = dc.rowChart("#event-chart");
-                    
+
                     timeChart
                         .width(350)
                         .height(250)
@@ -258,7 +257,7 @@ Bernardo Dominguez developed this module for his professional supervised practic
                         .renderHorizontalGridLines(true)
                         .brushOn(true)
                         {js_title_formats['time']};
-                    
+
                     moduleChart
                         .width(350)
                         .height(250)
@@ -276,7 +275,7 @@ Bernardo Dominguez developed this module for his professional supervised practic
                                 .attr('transform', 'translate(-10,10) rotate(270)')
                                 .style('text-anchor', 'end');
                         }});
-                    
+
                     eventChart
                         .width(350)
                         .height(250)
@@ -290,10 +289,10 @@ Bernardo Dominguez developed this module for his professional supervised practic
                             chart.selectAll('g.row text')
                                 .style('fill', 'black');
                         }});
-                    
+
                     dc.renderAll();
                 }}
-                
+
                 initializeStatsDashboard(loggedEvents);
             </script>
         </body>
@@ -306,7 +305,7 @@ Bernardo Dominguez developed this module for his professional supervised practic
         self.webWidget.setMinimumHeight(400)
         self.webWidget.setWindowTitle("Slicer Usage Statistics")
 
-        
+
     def shouldShowPopup(self):
         settings = qt.QSettings()
         lastSent = settings.value("lastSent")
@@ -314,10 +313,10 @@ Bernardo Dominguez developed this module for his professional supervised practic
             if not lastSent:
                 current_date = datetime.now().isoformat()
                 lastSent = current_date
-                settings.setValue("lastSent", current_date)                                            
+                settings.setValue("lastSent", current_date)
         except Exception as e:
             print(f"Error loading last sent date from Qsettings: {e}")
-        
+
         if lastSent:
             lastSentDate = datetime.fromisoformat(lastSent)
             if (datetime.now() - lastSentDate).days >= 7:
@@ -345,7 +344,7 @@ Bernardo Dominguez developed this module for his professional supervised practic
         elif response == qt.QMessageBox.Cancel:
             settings.setValue("TelemetryUserResponse", "cancel")
 
-    
+
     def weeklyUsageUpload(self):
         settings = qt.QSettings()
         lastSent = settings.value("lastSent")
@@ -356,12 +355,12 @@ Bernardo Dominguez developed this module for his professional supervised practic
                 settings.setValue("lastSent", current_date)
         except Exception as e:
             print(f"Error loading last sent date from Qsettings: {e}")
-        
+
         if lastSent:
             lastSentDate = datetime.fromisoformat(lastSent)
             if (datetime.now() - lastSentDate).days >= 7:
                 try:
-                    data_to_send = self.loggedEvents 
+                    data_to_send = self.loggedEvents
                     if self._haveQT:
                         request = qt.QNetworkRequest(qt.QUrl(self.url))
                         request.setHeader(qt.QNetworkRequest.ContentTypeHeader, "application/json")
@@ -382,7 +381,7 @@ Bernardo Dominguez developed this module for his professional supervised practic
                                 file.write(current_date)
                         else:
                             print(f"Error sending logged events to server: {response.status_code}")
-                            print(f"Response content: {response.text}")                    
+                            print(f"Response content: {response.text}")
                 except Exception as e:
                     print(f"Error sending logged events to server: {e}")
 
@@ -437,7 +436,7 @@ class TelemetryWidget(ScriptedLoadableModuleWidget):
         self.logic = TelemetryLogic()
 
         # Connections
-        
+
         self.extensionSelectionGroupBox = qt.QGroupBox("Select Extensions for Telemetry")
         self.extensionSelectionLayout = qt.QVBoxLayout()
 
@@ -559,7 +558,7 @@ class TelemetryWidget(ScriptedLoadableModuleWidget):
         settings.setValue("enabledExtensions", enabledExtensions)
         settings.setValue("disabledExtensions", disabledExtensions)
         settings.setValue("defaultExtensions", defaultExtensions)
-    
+
 
     def cleanup(self) -> None:
         """Called when the application closes and the module widget is destroyed."""
@@ -582,7 +581,7 @@ class TelemetryWidget(ScriptedLoadableModuleWidget):
             import traceback
             traceback.print_exc()
 
-                
+
 #
 # TelemetryLogic
 #
