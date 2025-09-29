@@ -879,8 +879,26 @@ class TelemetryLogic(ScriptedLoadableModuleLogic):
         reply.deleteLater()
 
     @staticmethod
+    def _createEmptyCSVFile(csv_file_path):
+        """Create an empty CSV file with proper headers."""
+        try:
+            with open(csv_file_path, "w", newline='') as csvfile:
+                fieldnames = ["component", "event", "day", "times"]
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                writer.writeheader()
+            print(f"Created empty CSV file: {csv_file_path}")
+        except Exception as e:
+            print(f"Error creating empty CSV file: {e}")
+
+    @staticmethod
     def readLoggedEventsFromFile(csv_file_path):
         try:
+            # Check if file exists, if not create an empty one
+            if not os.path.exists(csv_file_path):
+                print(f"CSV file {csv_file_path} does not exist. Creating a new one.")
+                TelemetryLogic._createEmptyCSVFile(csv_file_path)
+                return []
+            
             with open(csv_file_path, "r") as csvfile:
                 reader = csv.DictReader(csvfile)
                 return [row for row in reader]
@@ -891,6 +909,11 @@ class TelemetryLogic(ScriptedLoadableModuleLogic):
     @staticmethod
     def saveLoggedEventsToFile(csv_file_path, logged_events):
         try:
+            # Ensure the directory exists
+            directory = os.path.dirname(csv_file_path)
+            if directory and not os.path.exists(directory):
+                os.makedirs(directory)
+            
             with open(csv_file_path, "w", newline='') as csvfile:
                 fieldnames = ["component", "event", "day", "times"]
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
