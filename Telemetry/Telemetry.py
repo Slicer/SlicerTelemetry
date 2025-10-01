@@ -3,11 +3,10 @@ import csv
 import json
 import os
 import traceback
-
 import requests
 import qt
 import slicer
-from slicer import qSlicerWebWidget 
+from slicer import qSlicerWebWidget
 from slicer.i18n import tr as _
 from slicer.i18n import translate
 from slicer.ScriptedLoadableModule import (
@@ -43,11 +42,13 @@ class Telemetry(ScriptedLoadableModule):
     def __init__(self, parent):
         ScriptedLoadableModule.__init__(self, parent)
         self.parent.title = _("Telemetry")
-        self.parent.categories = [translate("qSlicerAbstractCoreModule", "Telemetry")]
+        self.parent.categories = [translate("qSlicerAbstractCoreModule", "Utilities")]
         self.parent.dependencies = []
-        self.parent.contributors = ["Dominguez Bernardo"]
+        self.parent.contributors = ["Dominguez Bernardo", "Andras Lasso (PerkLab, Queen's University)"]
+        # _() function marks text as translatable to other languages
         self.parent.helpText = _("""
 This extension allows 3D Slicer extensions to gather information on what software features are used. This information helps demonstrating impact, which is essential for getting continuous funding for maintenance and improvements.
+See more information at <a href='https://github.com/Slicer/SlicerTelemetry'>Telemetry extension website</a>.
 """)
         self.parent.acknowledgementText = _("""
 Bernardo Dominguez developed this module for his professional supervised practices of engineering studies at UTN-FRRO under the supervision and advice of PhD. Andras Lasso at Perklab and guidance from Slicer core developers""")
