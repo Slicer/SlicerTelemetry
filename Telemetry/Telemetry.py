@@ -61,6 +61,10 @@ Bernardo Dominguez developed this module for his professional supervised practic
         # Create logic instance to handle telemetry functionality
         logic = TelemetryLogic()
         
+            # Log startup event for basic statistics
+        if hasattr(slicer.app, 'logUsageEvent') and slicer.app.isUsageLoggingSupported:
+            slicer.app.logUsageEvent("Telemetry", "SlicerStartup")
+
         # Set up timer for showing permission popup
         qt.QTimer.singleShot(4000, lambda: self.showInitialTelemetrySetup())
 
