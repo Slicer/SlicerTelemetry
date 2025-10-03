@@ -23,6 +23,10 @@ from slicer.ScriptedLoadableModule import (
 
 
 def onUsageEventLogged(component, event):
+    # Do not collect statistics in testing mode
+    if slicer.app.testingEnabled():
+        return
+        
     if not TelemetryLogic.shouldLogUsageEvent(component):
         print(f"Component {component} is not in the enabled or default extensions with permission. Event not logged.")
         return
@@ -58,6 +62,10 @@ Bernardo Dominguez developed this module for his professional supervised practic
 
     def onStartupCompleted(self):
         """Initialize telemetry functionality after Slicer startup is complete."""
+        # Do not initialize telemetry in testing mode
+        if slicer.app.testingEnabled():
+            return
+            
         # Create logic instance to handle telemetry functionality
         logic = TelemetryLogic()
         
@@ -80,6 +88,10 @@ Bernardo Dominguez developed this module for his professional supervised practic
     
     def showInitialTelemetrySetup(self):
         """Show the initial telemetry permission setup if needed."""
+        # Do not show popups in testing mode
+        if slicer.app.testingEnabled():
+            return
+            
         try:
             settings = qt.QSettings()
             if settings.value("TelemetryDefaultPermission", None) is None:
@@ -262,6 +274,10 @@ class TelemetryWidget(ScriptedLoadableModuleWidget):
 
     def checkInitialConfiguration(self):
         """Check if telemetry needs initial configuration."""
+        # Do not show configuration dialog in testing mode
+        if slicer.app.testingEnabled():
+            return True
+            
         settings = qt.QSettings()
         defaultPermission = settings.value("TelemetryDefaultPermission", None)
         telemetryResponse = settings.value("TelemetryUserResponse", None)
@@ -297,6 +313,10 @@ class TelemetryWidget(ScriptedLoadableModuleWidget):
     @staticmethod
     def showTelemetryPermissionPopup():
         """Show comprehensive telemetry permission dialog."""
+        # Do not show popups in testing mode
+        if slicer.app.testingEnabled():
+            return
+            
         try:
             settings = qt.QSettings()
             if settings.value("TelemetryDefaultPermission", None) is None:
@@ -807,6 +827,10 @@ class TelemetryLogic(ScriptedLoadableModuleLogic):
 
     def usageUpload(self, force=False):
         """Upload usage data to server, showing popup if needed. If force=True, always send/prompt."""
+        # Do not upload or show popups in testing mode
+        if slicer.app.testingEnabled():
+            return
+            
         settings = qt.QSettings()
         sendPolicy = settings.value("TelemetrySendPolicy", "ask")
         if sendPolicy == "never" and not force:
@@ -974,6 +998,10 @@ class TelemetryLogic(ScriptedLoadableModuleLogic):
 
     @staticmethod
     def logUsageEvent(component, event):
+        # Do not log events in testing mode
+        if slicer.app.testingEnabled():
+            return
+            
         if not TelemetryLogic.shouldLogUsageEvent(component):
             print(f"Component {component} is not in the enabled or default extensions with permission. Event not logged.")
             return
@@ -1000,12 +1028,20 @@ class TelemetryLogic(ScriptedLoadableModuleLogic):
         TelemetryLogic.saveLoggedEventsToFile(csv_file_path, logged_events)
 
     def logAnEvent(self):
+        # Do not log events in testing mode
+        if slicer.app.testingEnabled():
+            return
+            
         # Log this event
         if hasattr(slicer.app, 'logUsageEvent') and slicer.app.isUsageLoggingSupported:
             slicer.app.logUsageEvent("Telemetry", "logAnEvent")
 
     def onExtensionInstalled(self, extensionName):
         """Handle extension installation by updating default settings."""
+        # Do not modify settings in testing mode
+        if slicer.app.testingEnabled():
+            return
+            
         settings = qt.QSettings()
         telemetryDefaultPermission = settings.value("TelemetryDefaultPermission")
         print(f"Telemetry default permission: {telemetryDefaultPermission}")
