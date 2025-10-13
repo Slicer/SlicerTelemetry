@@ -26,7 +26,6 @@ def onUsageEventLogged(component, event):
     # Do not collect statistics in testing mode
     if slicer.app.testingEnabled():
         return
-        
     if not TelemetryLogic.shouldLogUsageEvent(component):
         print(f"Component {component} is not in the enabled or default extensions with permission. Event not logged.")
         return
@@ -56,7 +55,6 @@ See more information at <a href='https://github.com/Slicer/SlicerTelemetry'>Tele
 """)
         self.parent.acknowledgementText = _("""
 Bernardo Dominguez developed this module for his professional supervised practices of engineering studies at UTN-FRRO under the supervision and advice of PhD. Andras Lasso at Perklab and guidance from Slicer core developers""")
-        
         # Initialize the telemetry logic on startup
         slicer.app.connect("startupCompleted()", self.onStartupCompleted)
 
@@ -65,10 +63,10 @@ Bernardo Dominguez developed this module for his professional supervised practic
         # Do not initialize telemetry in testing mode
         if slicer.app.testingEnabled():
             return
-            
+
         # Create logic instance to handle telemetry functionality
         logic = TelemetryLogic()
-        
+
             # Log startup event for basic statistics
         if hasattr(slicer.app, 'logUsageEvent') and slicer.app.isUsageLoggingSupported:
             slicer.app.logUsageEvent("Telemetry", "SlicerStartup")
@@ -85,13 +83,12 @@ Bernardo Dominguez developed this module for his professional supervised practic
 
         # Connect extension installation handler
         slicer.app.extensionsManagerModel().extensionInstalled.connect(logic.onExtensionInstalled)
-    
+
     def showInitialTelemetrySetup(self):
         """Show the initial telemetry permission setup if needed."""
         # Do not show popups in testing mode
         if slicer.app.testingEnabled():
             return
-            
         try:
             settings = qt.QSettings()
             if settings.value("TelemetryDefaultPermission", None) is None:
@@ -160,10 +157,10 @@ class TelemetryWidget(ScriptedLoadableModuleWidget):
     Telemetry module widget.
 
     """
-    
+
     # Class variable to store the stats dashboard widget
     _stats_web_widget = None
-    
+
 
     def __init__(self, parent=None) -> None:
         """Called when the user opens the module the first time and the widget is initialized."""
@@ -227,20 +224,17 @@ class TelemetryWidget(ScriptedLoadableModuleWidget):
         """Update the status label based on current settings."""
         try:
             settings = qt.QSettings()
-            
             telemetryResponse = settings.value("TelemetryUserResponse", None)
             defaultPermission = settings.value("TelemetryDefaultPermission", None)
             if isinstance(defaultPermission, str):
                 defaultPermission = defaultPermission.lower() == 'true'
             enabledExtensions = settings.value("enabledExtensions", []) or []
             disabledExtensions = settings.value("disabledExtensions", []) or []
-            
             # Convert tuples to lists if necessary
             if isinstance(enabledExtensions, tuple):
                 enabledExtensions = list(enabledExtensions)
             if isinstance(disabledExtensions, tuple):
                 disabledExtensions = list(disabledExtensions)
-            
             # Generate status message
             if telemetryResponse == "no":
                 status = "🔒 Telemetry is completely disabled"
@@ -260,8 +254,8 @@ class TelemetryWidget(ScriptedLoadableModuleWidget):
             else:
                 status = "❓ Telemetry preferences not configured"
                 styleSheet = "font-weight: bold;"
-            
-            
+
+
             # Check if statusLabel exists
             if hasattr(self.ui, 'statusLabel') and self.ui.statusLabel:
                 self.ui.statusLabel.setStyleSheet(styleSheet)
@@ -277,17 +271,17 @@ class TelemetryWidget(ScriptedLoadableModuleWidget):
         # Do not show configuration dialog in testing mode
         if slicer.app.testingEnabled():
             return True
-            
+
         settings = qt.QSettings()
         defaultPermission = settings.value("TelemetryDefaultPermission", None)
         telemetryResponse = settings.value("TelemetryUserResponse", None)
-        
 
-        
+
+
         if defaultPermission is None and telemetryResponse is None:
             # Show configuration dialog automatically
             qt.QTimer.singleShot(2000, self.showPermissionDialog)
-        
+
         return defaultPermission is not None or telemetryResponse is not None
 
     def cleanup(self) -> None:
@@ -316,7 +310,7 @@ class TelemetryWidget(ScriptedLoadableModuleWidget):
         # Do not show popups in testing mode
         if slicer.app.testingEnabled():
             return
-            
+
         try:
             settings = qt.QSettings()
             if settings.value("TelemetryDefaultPermission", None) is None:
@@ -325,7 +319,7 @@ class TelemetryWidget(ScriptedLoadableModuleWidget):
         except Exception as e:
             print(f"Error in showTelemetryPermissionPopup: {e}")
             traceback.print_exc()
-            
+
     @staticmethod
     def handleTelemetryUpload(force=False):
         """Handle telemetry upload, optionally forcing immediate send/prompt."""
@@ -345,7 +339,6 @@ class TelemetryWidget(ScriptedLoadableModuleWidget):
                 settings.setValue("TelemetryUserResponse", "no")
             elif response == qt.QMessageBox.Cancel:
                 settings.setValue("TelemetryUserResponse", "cancel")
-        
         if response == qt.QMessageBox.Yes:
             print("User accepted the telemetry upload.")
             logic = TelemetryLogic()
@@ -354,7 +347,7 @@ class TelemetryWidget(ScriptedLoadableModuleWidget):
             print("User rejected the telemetry upload.")
         elif response == qt.QMessageBox.Cancel:
             print("User chose to be asked later.")
-        
+
         dialog.close()
 
     @staticmethod
@@ -363,10 +356,10 @@ class TelemetryWidget(ScriptedLoadableModuleWidget):
         # Create or reuse the web widget
         if TelemetryWidget._stats_web_widget is None:
             TelemetryWidget._stats_web_widget = qSlicerWebWidget()
-        
+
         webWidget = TelemetryWidget._stats_web_widget
         loggedEvents = TelemetryLogic.readLoggedEventsFromFile('telemetry_events.csv')
-        
+
         events_json = json.dumps(loggedEvents)
         js_title_formats = {
             'time': r".title(d => `${d3.timeFormat('%Y-%m-%d')(d.key)}: ${d.value} events`)",
@@ -529,7 +522,6 @@ class TelemetryPermissionDialog(qt.QDialog):
     """
     A comprehensive dialog for telemetry permissions with collapsible extension settings.
     """
-    
     def __init__(self, parent=None):
         super().__init__(parent)
         try:
@@ -594,11 +586,11 @@ class TelemetryPermissionDialog(qt.QDialog):
         """Get resource file path."""
         moduleDir = os.path.dirname(os.path.realpath(__file__))
         return os.path.join(moduleDir, 'Resources', filename)
-    
+
     def loadCurrentSettings(self):
         """Load current telemetry settings from QSettings."""
         settings = qt.QSettings()
-        
+
         # Check default permission setting
         if settings.contains("TelemetryDefaultPermission"):
             defaultPermission = settings.value("TelemetryDefaultPermission", False)
@@ -608,10 +600,10 @@ class TelemetryPermissionDialog(qt.QDialog):
                 defaultPermission = bool(defaultPermission)
         else:
             defaultPermission = None
-        
+
         # Check if telemetry is completely disabled
         telemetryResponse = settings.value("TelemetryUserResponse", None)
-        
+
         if telemetryResponse == "no" or telemetryResponse == "cancel":
             self.noDataCollectionRadio.setChecked(True)
         elif defaultPermission is True:
@@ -621,18 +613,15 @@ class TelemetryPermissionDialog(qt.QDialog):
         else:
             # Default to allow by default for first-time users
             self.allowByDefaultRadio.setChecked(True)
-    
     def populateExtensionList(self):
         """Populate the extension list with current permissions."""
         # Get installed extensions
         extensions = slicer.app.extensionsManagerModel().installedExtensions
-        
         # Get current extension settings
         settings = qt.QSettings()
         enabledExtensions = settings.value("enabledExtensions", [])
         disabledExtensions = settings.value("disabledExtensions", [])
         defaultExtensions = settings.value("defaultExtensions", [])
-        
         # Convert tuples to lists if necessary
         if isinstance(enabledExtensions, tuple):
             enabledExtensions = list(enabledExtensions)
@@ -640,7 +629,6 @@ class TelemetryPermissionDialog(qt.QDialog):
             disabledExtensions = list(disabledExtensions)
         if isinstance(defaultExtensions, tuple):
             defaultExtensions = list(defaultExtensions)
-        
         # Ensure they are lists
         if enabledExtensions is None:
             enabledExtensions = []
@@ -648,32 +636,28 @@ class TelemetryPermissionDialog(qt.QDialog):
             disabledExtensions = []
         if defaultExtensions is None:
             defaultExtensions = []
-        
         # Check if we have a valid layout
         if self.extensionListLayout is None:
             print("Warning: extensionListLayout not available, skipping extension list update")
             return
-            
         # Clear existing layout
         while self.extensionListLayout.count():
             child = self.extensionListLayout.takeAt(0)
             if child.widget():
                 child.widget().deleteLater()
-        
         # Add extension controls
         for extension in extensions:
             # Create horizontal layout for each extension
             extensionLayout = qt.QHBoxLayout()
-            
             # Extension name label
             nameLabel = qt.QLabel(extension)
             nameLabel.setMinimumWidth(150)
             extensionLayout.addWidget(nameLabel)
-            
+
             # Permission combo box
             permissionCombo = qt.QComboBox()
             permissionCombo.addItems(["Default", "Always Enable", "Always Disable"])
-            
+
             # Set current state
             if extension in enabledExtensions:
                 permissionCombo.setCurrentIndex(1)  # Always Enable
@@ -681,43 +665,42 @@ class TelemetryPermissionDialog(qt.QDialog):
                 permissionCombo.setCurrentIndex(2)  # Always Disable
             else:
                 permissionCombo.setCurrentIndex(0)  # Default
-            
             # Store reference and connect signal
             self.extensionComboBoxes[extension] = permissionCombo
             permissionCombo.currentIndexChanged.connect(
                 lambda index, ext=extension: self.onExtensionPermissionChanged(ext, index)
             )
-            
+
             extensionLayout.addWidget(permissionCombo)
             extensionLayout.addStretch()
-            
+
             # Add to main layout
             self.extensionListLayout.addLayout(extensionLayout)
-        
+
         if not extensions:
             noExtensionsLabel = qt.QLabel("No extensions currently installed.")
             noExtensionsLabel.setStyleSheet("color: gray; font-style: italic;")
             self.extensionListLayout.addWidget(noExtensionsLabel)
-        
+
         # Add stretch at the end to ensure proper scrolling behavior
         self.extensionListLayout.addStretch()
-        
+
         # Ensure the scroll area content has proper size hints
         self.scrollAreaWidgetContents.setMinimumWidth(400)
-    
+
     def onExtensionPermissionChanged(self, extension, index):
         """Handle changes to individual extension permissions."""
         # This will be saved when the dialog is accepted
         pass
-    
+
     def updateExtensionControls(self):
         """Enable/disable extension controls based on main telemetry setting."""
         enabled = not self.noDataCollectionRadio.isChecked()
-        
+
         # Enable/disable all extension combo boxes
         for comboBox in self.extensionComboBoxes.values():
             comboBox.setEnabled(enabled)
-    
+
     def toggleExtensionsDisplay(self):
         """Toggle the visibility of the extensions area."""
         if self.extensionsExpanded:
@@ -729,20 +712,19 @@ class TelemetryPermissionDialog(qt.QDialog):
             self.toggleExtensionsButton.setText("▲ Hide Extension Settings")
             self.extensionsExpanded = True
 
-    
     def onAccepted(self):
         """Save settings when dialog is accepted."""
         self.saveSettings()
         self.accept()
-    
+
     def onRejected(self):
         """Handle dialog cancellation."""
         self.reject()
-    
+
     def saveSettings(self):
         """Save all telemetry settings to QSettings."""
         settings = qt.QSettings()
-        
+
         # Save main telemetry preference
         if self.allowByDefaultRadio.isChecked():
             settings.setValue("TelemetryDefaultPermission", True)
@@ -753,12 +735,10 @@ class TelemetryPermissionDialog(qt.QDialog):
         else:  # No data collection
             settings.setValue("TelemetryDefaultPermission", False)
             settings.setValue("TelemetryUserResponse", "no")
-        
         # Save individual extension settings
         enabledExtensions = []
         disabledExtensions = []
         defaultExtensions = []
-        
         for extension, comboBox in self.extensionComboBoxes.items():
             index = comboBox.currentIndex
             if index == 1:  # Always Enable
@@ -767,11 +747,11 @@ class TelemetryPermissionDialog(qt.QDialog):
                 disabledExtensions.append(extension)
             else:  # Default
                 defaultExtensions.append(extension)
-        
+
         settings.setValue("enabledExtensions", enabledExtensions)
         settings.setValue("disabledExtensions", disabledExtensions)
         settings.setValue("defaultExtensions", defaultExtensions)
-        
+
 
 
 #
@@ -784,7 +764,6 @@ class TelemetryLogic(ScriptedLoadableModuleLogic):
     def __init__(self) -> None:
         """Called when the logic class is instantiated. Can be used for initializing member variables."""
         ScriptedLoadableModuleLogic.__init__(self)
-        
         # Initialize network manager for Qt-based uploads
         try:
             self.networkAccessManager = qt.QNetworkAccessManager()
@@ -793,7 +772,7 @@ class TelemetryLogic(ScriptedLoadableModuleLogic):
             self._haveQT = True
         except ModuleNotFoundError:
             self._haveQT = False
-        
+
         self.url = "https://ber-dom.sao.dom.my.id/telemetry"
         self.headers = {"Content-Type": "application/json"}
         self.csv_file_path = 'telemetry_events.csv'
@@ -830,7 +809,7 @@ class TelemetryLogic(ScriptedLoadableModuleLogic):
         # Do not upload or show popups in testing mode
         if slicer.app.testingEnabled():
             return
-            
+
         settings = qt.QSettings()
         sendPolicy = settings.value("TelemetrySendPolicy", "ask")
         if sendPolicy == "never" and not force:
@@ -927,7 +906,6 @@ class TelemetryLogic(ScriptedLoadableModuleLogic):
                 print(f"CSV file {csv_file_path} does not exist. Creating a new one.")
                 TelemetryLogic._createEmptyCSVFile(csv_file_path)
                 return []
-            
             with open(csv_file_path, "r") as csvfile:
                 reader = csv.DictReader(csvfile)
                 return [row for row in reader]
@@ -942,7 +920,6 @@ class TelemetryLogic(ScriptedLoadableModuleLogic):
             directory = os.path.dirname(csv_file_path)
             if directory and not os.path.exists(directory):
                 os.makedirs(directory)
-            
             with open(csv_file_path, "w", newline='') as csvfile:
                 fieldnames = ["component", "event", "day", "times"]
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -1001,7 +978,6 @@ class TelemetryLogic(ScriptedLoadableModuleLogic):
         # Do not log events in testing mode
         if slicer.app.testingEnabled():
             return
-            
         if not TelemetryLogic.shouldLogUsageEvent(component):
             print(f"Component {component} is not in the enabled or default extensions with permission. Event not logged.")
             return
@@ -1031,7 +1007,6 @@ class TelemetryLogic(ScriptedLoadableModuleLogic):
         # Do not log events in testing mode
         if slicer.app.testingEnabled():
             return
-            
         # Log this event
         if hasattr(slicer.app, 'logUsageEvent') and slicer.app.isUsageLoggingSupported:
             slicer.app.logUsageEvent("Telemetry", "logAnEvent")
@@ -1041,7 +1016,6 @@ class TelemetryLogic(ScriptedLoadableModuleLogic):
         # Do not modify settings in testing mode
         if slicer.app.testingEnabled():
             return
-            
         settings = qt.QSettings()
         telemetryDefaultPermission = settings.value("TelemetryDefaultPermission")
         print(f"Telemetry default permission: {telemetryDefaultPermission}")
