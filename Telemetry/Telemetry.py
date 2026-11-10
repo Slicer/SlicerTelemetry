@@ -806,7 +806,7 @@ class TelemetryLogic(ScriptedLoadableModuleLogic):
             stored_url = settings.value("TelemetrySendUrl", None)
         except Exception:
             stored_url = None
-        self.url = stored_url or "https://ber-dom.sao.dom.my.id/telemetry"
+        self.url = stored_url or "https://slicer-telemetry.kitware.com/telemetry"
         self.headers = {"Content-Type": "application/json"}
         self.csv_file_path = 'telemetry_events.csv'
         self.urlsByReply = {}
