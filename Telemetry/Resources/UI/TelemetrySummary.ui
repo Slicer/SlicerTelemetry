@@ -194,7 +194,7 @@
     <item>
      <widget class="QTextEdit" name="urlTextEdit">
       <property name="plainText">
-       <string>https://ber-dom.sao.dom.my.id/telemetry</string>
+       <string>https://slicer-telemetry.kitware.com/telemetry</string>
       </property>
       <property name="maximumHeight">
        <number>40</number>
